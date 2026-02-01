@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Grêmio Estudantil - ONLINE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --sed-primary: #00a896; --sed-secondary: #0077b6; --sed-bg: #f0f4f7; }
+        body { background-color: var(--sed-bg); font-family: 'Segoe UI', sans-serif; }
+        .container-main { background: white; border-top: 6px solid var(--sed-primary); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="login-screen" class="max-w-md mx-auto container-main p-8 rounded-xl shadow-lg">
+        <div class="text-center mb-6">
+            <img src="https://media-gru2-1.cdn.whatsapp.net/v/t61.24694-24/489405406_650586094569182_6793834854762065392_n.jpg?ccb=11-4&oh=01_Q5Aa3QFLI5uLR7B-Jj5LSyAQd7wxXJoZ9ceCDkzThVR0E9T4Bw&oe=69645917&_nc_sid=5e03e0&_nc_cat=102" class="mx-auto h-24 mb-4 rounded-lg">
+            <h2 class="text-xl font-bold text-gray-800">Portal Grêmio Estudantil</h2>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold mb-1">Cargo</label>
+                <select id="user" class="w-full border p-3 rounded-lg bg-gray-50">
+                    <option value="" disabled selected>Escolha seu cargo...</option>
+                    <option>COORDENADOR FINANCEIRO</option>
+                    <option>COORDENADOR EVENTOS</option>
+                    <option>COORDENADOR COMUNICAÇÃO</option>
+                    <option>COORDENADOR DESPORTIVO</option>
+                    <option>COORDENADOR CULTURAL</option>
+                    <option>COORDENADOR RELAÇÕES SOCIAIS/CONVIVA</option>
+                    <option>COMISSÃO DE DIREITOS HUMANOS</option>
+                    <option>CHEFE DE COMISSÕES</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-1">Senha</label>
+                <input type="password" id="pass" class="w-full border p-3 rounded-lg" placeholder="••••••">
+            </div>
+            <button id="btnLogin" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Entrar no Sistema</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="max-w-3xl mx-auto container-main p-8 rounded-xl shadow-lg hidden">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <span id="user-display" class="text-sm font-bold text-teal-600 uppercase"></span>
+            <button onclick="location.reload()" class="text-red-500 text-xs font-bold hover:underline">SAIR</button>
+        </div>
+        
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Cadastrar Nova Ação</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+                <label class="text-sm font-bold">Nome do Executor</label>
+                <input type="text" id="nome_executor" class="w-full border p-2 rounded">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-sm font-bold">Título da Ação</label>
+                <input type="text" id="titulo" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="text-sm font-bold">Data</label>
+                <input type="date" id="data" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="text-sm font-bold">Participantes</label>
+                <input type="number" id="qtd" class="w-full border p-2 rounded">
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-sm font-bold">Descrição</label>
+                <textarea id="descricao" class="w-full border p-2 rounded" rows="3"></textarea>
+            </div>
+        </div>
+        
+        <div class="mt-6 space-y-3">
+            <button id="btnSalvar" class="w-full bg-teal-600 text-white py-3 rounded-lg font-bold hover:bg-teal-700">SALVAR NO BANCO ONLINE</button>
+            <button id="btnVerLogs" class="w-full bg-gray-600 text-white py-3 rounded-lg font-bold">CONSULTAR HISTÓRICO</button>
+        </div>
+    </div>
+
+    <div id="logs-screen" class="max-w-4xl mx-auto container-main p-8 rounded-xl shadow-lg hidden">
+        <h2 class="text-2xl font-bold mb-6">Histórico em Tempo Real</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="p-3 border">Data/Hora</th>
+                        <th class="p-3 border">Autor</th>
+                        <th class="p-3 border">Ação</th>
+                        <th class="p-3 border">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body"></tbody>
+            </table>
+        </div>
+        <button onclick="voltarDash()" class="mt-6 bg-gray-800 text-white px-6 py-2 rounded">Voltar</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAAalV4WDRRSWE_Yds4t1fx0jBtYtIUbQM",
+            authDomain: "gremio-com.firebaseapp.com",
+            databaseURL: "https://gremio-com-default-rtdb.firebaseio.com",
+            projectId: "gremio-com",
+            storageBucket: "gremio-com.firebasestorage.app",
+            messagingSenderId: "659485600593",
+            appId: "1:659485600593:web:00d57139a612d8dd704170"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        let loggedUser = "";
+
+        // Login Simples (Ainda usando a lógica '16' que você enviou, mas agora centralizada)
+        document.getElementById('btnLogin').onclick = () => {
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+            if (p === "16") {
+                loggedUser = u;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                document.getElementById('user-display').innerText = u;
+            } else { alert("Senha incorreta!"); }
+        };
+
+        // Salvar Ação no Firebase
+        document.getElementById('btnSalvar').onclick = async () => {
+            const registro = {
+                cargo: loggedUser,
+                autor: document.getElementById('nome_executor').value,
+                titulo: document.getElementById('titulo').value,
+                dataAcao: document.getElementById('data').value,
+                qtd: document.getElementById('qtd').value,
+                descricao: document.getElementById('descricao').value,
+                timestamp: new Date().toLocaleString('pt-BR')
+            };
+
+            if(!registro.autor || !registro.titulo) return alert("Preencha os campos!");
+
+            const acoesRef = ref(db, 'acoes');
+            const novaAcaoRef = push(acoesRef);
+            await set(novaAcaoRef, registro);
+            
+            alert("Sincronizado com sucesso!");
+            document.querySelectorAll('input, textarea').forEach(i => i.value = "");
+        };
+
+        // Consultar Logs (Senha de Admin para ver logs)
+        document.getElementById('btnVerLogs').onclick = () => {
+            const p = prompt("Senha do Histórico:");
+            if(p === "2016") {
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('logs-screen').classList.remove('hidden');
+                carregarLogs();
+            }
+        };
+
+        function carregarLogs() {
+            const acoesRef = ref(db, 'acoes');
+            onValue(acoesRef, (snapshot) => {
+                const tbody = document.getElementById('log-table-body');
+                tbody.innerHTML = "";
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="p-3 border text-xs">${data.timestamp}</td>
+                        <td class="p-3 border text-xs"><b>${data.cargo}</b><br>${data.autor}</td>
+                        <td class="p-3 border text-xs">${data.titulo}</td>
+                        <td class="p-3 border"><button class="bg-red-500 text-white px-2 py-1 rounded text-[10px]" onclick="window.excluirAcao('${child.key}')">Apagar</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        window.excluirAcao = (key) => {
+            if(confirm("Deseja apagar este registro online?")) {
+                remove(ref(db, `acoes/${key}`));
+            }
+        };
+
+        window.voltarDash = () => {
+            document.getElementById('logs-screen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+        };
+
+    </script>
+</body>
+</html>
