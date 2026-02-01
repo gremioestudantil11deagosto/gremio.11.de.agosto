@@ -54,6 +54,7 @@
             <label>Selecione seu Cargo</label>
             <select id="user">
                 <option value="" disabled selected>Escolha uma opção...</option>
+                 <option value="COORDENADOR GERAL">COORDENADOR GERAL</option>
                 <option value="COORDENADOR FINANCEIRO">COORDENADOR FINANCEIRO</option>
                 <option value="COORDENADOR EVENTOS">COORDENADOR EVENTOS</option>
                 <option value="COORDENADOR COMUNICAÇÃO">COORDENADOR COMUNICAÇÃO</option>
@@ -125,6 +126,7 @@
         const { jsPDF } = window.jspdf;
        
         const users = {
+            "COORDENADOR GERAL": "16"
             "COORDENADOR FINANCEIRO": "16",
             "COORDENADOR EVENTOS": "16",
             "COORDENADOR COMUNICAÇÃO": "16",
